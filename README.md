@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lottie Spinner Reel (Next.js)
 
-## Getting Started
+Интерактивный «спиннер-барабан» для Lottie-анимаций (.tgs/.json). По клику запускается плавный детерминированный спин с глубиной, масштабированием центрального элемента и мягкой физикой. Фоновая палитра плавно переливается между заданными цветами. Отдельная страница настроек позволяет загружать анимации, управлять цветами и настраивать правила выбора результата.
 
-First, run the development server:
+— Подходит для демонстраций ассетов, интерактивов на ивентах, розыгрышей, выбора «победителя» среди анимаций или любых визуальных «рандомайзеров».
+
+## Демонстрация поведения
+
+- Главная: показывает канвас с «барабаном» из 3 видимых ячеек. Клик по канвасу запускает спин с несколькими кругами и гарантированной остановкой по центру.
+- Информационная карточка под канвасом синхронно прокручивает название активной анимации и цвет.
+- Фон внутри канваса плавно меняет цвет, смешивая соседние тона заданной палитры.
+
+## Возможности
+
+- Загрузка Lottie-анимаций: .tgs (Telegram Sticker, gzip) и .json
+- Просмотр и управление загруженными анимациями на странице /settings
+- Сохранение локально (localStorage) без сервера:
+  - Хранение в компактном формате (data:application/json;base64,...) с обратной совместимостью
+  - Тихая обработка переполнения storage: сохранение максимально возможного набора
+- Режимы выбора результата спина:
+  - Random — равновероятный выбор
+  - Fixed — фиксированный индекс анимации/цвета
+  - Weighted — взвешенная вероятность для каждой анимации
+- Адаптивный канвас с учётом DPR (Retina), масштабирование и блики по краям для глубины
+- Плавная смена фона из пользовательской палитры
+- UI на чистом React без зависимости от CSS-фреймворков, работает из коробки
+
+## Быстрый старт
+
+Требования: Node.js 18+.
+
+1) Установка зависимостей
+
+```bash
+npm install
+```
+
+2) Запуск разработки
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3) Загрузка анимаций и настройка
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Перейдите на http://localhost:3000/settings
+- Перетащите или выберите файлы .tgs / .json
+- Отредактируйте палитру фона (цвета можно добавлять/удалять и сбрасывать к дефолтной)
+- В блоке «Spin outcome preferences» выберите режим:
+  - Random / Fixed (с индексом) / Weighted (задать веса для каждой анимации)
+- Вернитесь на главную и кликните по канвасу, чтобы запустить спин
 
-## Learn More
+Подсказка: если анимации не загружены, используется sample-animation.json из public как пример.
 
-To learn more about Next.js, take a look at the following resources:
+## Как это работает (вкратце)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- src/components/SpinnerReel.tsx:
+  - Создаёт «поверхности» Lottie (renderer=canvas), синхронно отрисовывает их в общий канвас
+  - Держит 3 видимых слота и рисует ещё по 1 за краями (offscreen) для плавного движения
+  - Центральный элемент крупнее соседних (эффект глубины)
+  - Фон — одиночный плавно меняющийся цвет, смешиваемый из пользовательской палитры
+  - Клик запускает детерминированный сценарный спин с фиксированным числом шагов так, чтобы победитель оказался по центру
+- src/app/settings/page.tsx:
+  - Драг-н-дроп/выбор файлов .tgs/.json, предпросмотр через lottie-react
+  - Редактор палитры фона и режимов выпадения результата (Random/Fixed/Weighted)
+  - Все настройки и анимации хранятся в localStorage
+- src/lib/tgs.ts:
+  - Декодирование .tgs (pako), парсинг .json
+  - Безопасное хранение в localStorage (data URL + обработка квоты)
+  - Настройки палитры и преференции спина (включая веса) с валидацией
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Технологии
 
-## Deploy on Vercel
+- Next.js 15 (App Router), React 19
+- lottie-web (рендер в canvas) и lottie-react (превью в настройках)
+- TypeScript, pako
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Структура
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- public/sample-animation.json — запасной пример анимации
+- src/app/page.tsx — главная страница (канвас + ссылка Settings)
+- src/app/settings/page.tsx — загрузка анимаций, палитра, режимы спина
+- src/components/SpinnerReel.tsx — ядро визуализации и физики спина
+- src/lib/tgs.ts — декодирование/хранение/настройки
+
+## Хранилище и приватность
+
+- Все загруженные анимации и настройки сохраняются в вашем браузере (localStorage). Ничего не отправляется на сервер.
+- При переполнении памяти приложение автоматически сохраняет максимально возможное количество элементов, сохраняя устойчивость.
+
+## Скрипты
+
+- dev: next dev --turbopack — запуск режима разработки
+- build: next build --turbopack — сборка
+- start: next start — запуск production-сборки
+
+## Лицензия
+
+См. LICENSE. Лицензия содержит анти-патентный пункт (патентная не-агрессия и отмена лицензии при патентных исках).
