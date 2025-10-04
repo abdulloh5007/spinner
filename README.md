@@ -32,13 +32,13 @@
 1) Установка зависимостей
 
 ```bash
-npm install
+pnpm install
 ```
 
 2) Запуск разработки
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Откройте http://localhost:3000
